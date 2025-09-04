@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Heart, MessageCircle, Send, Hash, Filter, Plus, ChevronDown, ChevronUp, Tag, Image } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
 
@@ -64,6 +65,8 @@ const Community = () => {
   const [typeFilter, setTypeFilter] = useState<CommunityPost["post_type"] | "all">("all");
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<Record<string, CommunityComment[]>>({});
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [newComment, setNewComment] = useState<Record<string, string>>({});
 
   // SEO
@@ -317,191 +320,279 @@ const Community = () => {
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto p-4 md:p-6 max-w-6xl mx-auto w-full">
-            {/* Create Post */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Plus className="h-5 w-5" /> Create a Post</CardTitle>
-                <CardDescription>Share an achievement, ask for help, or start a discussion. Add tags for discoverability.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3">
-                  <Input placeholder="Title (e.g., Completed the Summit Quest!)" value={title} onChange={(e) => setTitle(e.target.value)} />
-                  <div className="grid md:grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2">
-                      <label className="text-sm text-muted-foreground whitespace-nowrap">Type</label>
+          <main className="flex-1 overflow-auto max-w-2xl mx-auto w-full relative">
+            {/* Floating Action Buttons */}
+            <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+              <Button 
+                size="icon" 
+                className="h-12 w-12 rounded-full shadow-lg"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-5 w-5" />
+              </Button>
+              
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button 
+                    size="icon" 
+                    className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+                  >
+                    <Plus className="h-6 w-6" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Create a Post</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4">
+                    <Input 
+                      placeholder="What's on your mind?" 
+                      value={title} 
+                      onChange={(e) => setTitle(e.target.value)} 
+                    />
+                    <div className="grid grid-cols-2 gap-3">
                       <select
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                         value={postType}
-                        onChange={(e) => setPostType(e.target.value as CommunityPost["post_type"]) }
+                        onChange={(e) => setPostType(e.target.value as CommunityPost["post_type"])}
                       >
                         <option value="general">General</option>
                         <option value="help">Help</option>
                         <option value="achievement">Achievement</option>
                         <option value="discussion">Discussion</option>
                       </select>
+                      <Input 
+                        placeholder="Tags (comma separated)" 
+                        value={tagsInput} 
+                        onChange={(e) => setTagsInput(e.target.value)} 
+                      />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Hash className="h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Tags (comma separated)" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} />
-                    </div>
-                  </div>
-                  <Textarea placeholder="Write your post..." value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[120px]" />
-                  
-                  {/* Image Upload */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 flex items-center gap-2">
-                      <Image className="h-4 w-4" />
-                      Add Image (Optional)
-                    </label>
-                    <ImageUpload
-                      onImageUpload={setImageUrl}
-                      onImageRemove={() => setImageUrl("")}
-                      existingImage={imageUrl}
+                    <Textarea 
+                      placeholder="Write your post..." 
+                      value={content} 
+                      onChange={(e) => setContent(e.target.value)} 
+                      className="min-h-[100px]" 
                     />
+                    
+                    {/* Image Upload */}
+                    <div>
+                      <label className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <Image className="h-4 w-4" />
+                        Add Image (Optional)
+                      </label>
+                      <ImageUpload
+                        onImageUpload={setImageUrl}
+                        onImageRemove={() => setImageUrl("")}
+                        existingImage={imageUrl}
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowCreateDialog(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          handleCreatePost();
+                          setShowCreateDialog(false);
+                        }} 
+                        disabled={!title.trim() || !content.trim() || creating}
+                      >
+                        {creating ? "Posting..." : "Post"}
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="flex justify-end">
-                    <Button onClick={handleCreatePost} disabled={!title.trim() || !content.trim() || creating}>
-                      {creating ? "Posting..." : "Post"}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-            {/* Filters */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Filter className="h-5 w-5" /> Filter</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-3">
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Filter by tag (e.g., hiking)" value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-muted-foreground whitespace-nowrap">Type</label>
+            {/* Filters Panel */}
+            {showFilters && (
+              <Card className="mb-4 mx-4">
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Input 
+                      placeholder="Filter by tag..." 
+                      value={tagFilter} 
+                      onChange={(e) => setTagFilter(e.target.value)} 
+                    />
                     <select
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       value={typeFilter}
                       onChange={(e) => setTypeFilter(e.target.value as any)}
                     >
-                      <option value="all">All</option>
+                      <option value="all">All Posts</option>
                       <option value="general">General</option>
                       <option value="help">Help</option>
                       <option value="achievement">Achievement</option>
                       <option value="discussion">Discussion</option>
                     </select>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => { setTagFilter(""); setTypeFilter("all"); }}>Clear</Button>
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2" 
+                    onClick={() => { setTagFilter(""); setTypeFilter("all"); }}
+                  >
+                    Clear Filters
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Instagram-like Posts Feed */}
+            <div className="p-4 space-y-6">
+              {loading ? (
+                <div className="text-center text-muted-foreground py-12">Loading posts...</div>
+              ) : filteredPosts.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground mb-4">No posts yet. Be the first to share!</p>
+                  <Button onClick={() => setShowCreateDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" /> Create First Post
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Posts List */}
-            {loading ? (
-              <div className="text-center text-muted-foreground py-12">Loading posts...</div>
-            ) : filteredPosts.length === 0 ? (
-              <Card><CardContent className="py-10 text-center text-muted-foreground">No posts yet. Be the first to share!</CardContent></Card>
-            ) : (
-              <div className="space-y-4">
-                {filteredPosts.map((post) => (
-                  <Card key={post.id} className="overflow-hidden">
+              ) : (
+                filteredPosts.map((post) => (
+                  <Card key={post.id} className="border-0 shadow-sm">
                     <CardContent className="p-0">
-                      <div className="p-4">
-                        {/* Header */}
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={post.user_profile?.avatar_url || undefined} alt={post.user_profile?.full_name || post.user_profile?.username || "User"} />
-                            <AvatarFallback>
-                              {(post.user_profile?.full_name?.charAt(0) || post.user_profile?.username?.charAt(0) || "U").toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-semibold">{post.title}</h3>
-                              <span className="text-xs text-muted-foreground">{new Date(post.created_at).toLocaleString()}</span>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {post.user_profile?.full_name || post.user_profile?.username || "Anonymous"} • {post.post_type}
-                            </div>
-                          </div>
+                      {/* Post Header */}
+                      <div className="flex items-center gap-3 p-4 pb-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={post.user_profile?.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {(post.user_profile?.full_name?.charAt(0) || post.user_profile?.username?.charAt(0) || "U").toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm">
+                            {post.user_profile?.username || "Anonymous"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(post.created_at).toLocaleString()}
+                          </p>
                         </div>
+                        <Badge variant="outline" className="text-xs">
+                          {post.post_type}
+                        </Badge>
+                      </div>
 
-                        {/* Content */}
-                        <div className="mt-3 text-sm whitespace-pre-wrap">{post.content}</div>
+                      {/* Post Title */}
+                      {post.title && (
+                        <div className="px-4 pb-2">
+                          <h3 className="font-semibold text-base">{post.title}</h3>
+                        </div>
+                      )}
 
-                        {/* Tags */}
-                        {post.tags?.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {post.tags.map((t) => (
-                              <Badge key={t} variant="secondary" className="cursor-pointer" onClick={() => setTagFilter(t)}>
-                                #{t}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
+                      {/* Post Content */}
+                      <div className="px-4 pb-3">
+                        <p className="text-sm whitespace-pre-wrap">{post.content}</p>
+                      </div>
 
-                        {/* Actions */}
-                        <div className="mt-4 flex items-center gap-4">
-                          <Button variant="ghost" size="sm" onClick={() => toggleLike(post.id)} className={post.user_has_liked ? "text-red-500" : "text-muted-foreground"}>
-                            <Heart className={`h-5 w-5 ${post.user_has_liked ? "fill-current" : ""}`} /> {post.likes_count}
+                      {/* Tags */}
+                      {post.tags?.length > 0 && (
+                        <div className="px-4 pb-3 flex flex-wrap gap-1">
+                          {post.tags.map((tag) => (
+                            <Badge 
+                              key={tag} 
+                              variant="secondary" 
+                              className="text-xs cursor-pointer hover:bg-secondary/80" 
+                              onClick={() => setTagFilter(tag)}
+                            >
+                              #{tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Post Actions */}
+                      <div className="flex items-center justify-between px-4 py-3 border-t">
+                        <div className="flex items-center gap-4">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => toggleLike(post.id)} 
+                            className={`p-1 h-auto ${post.user_has_liked ? "text-red-500" : "text-muted-foreground"}`}
+                          >
+                            <Heart className={`h-5 w-5 ${post.user_has_liked ? "fill-current" : ""}`} />
+                            <span className="ml-1 text-sm">{post.likes_count}</span>
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => toggleComments(post.id)} className="text-muted-foreground">
-                            <MessageCircle className="h-5 w-5" /> {post.comments_count}
-                            {openComments[post.id] ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => toggleComments(post.id)} 
+                            className="p-1 h-auto text-muted-foreground"
+                          >
+                            <MessageCircle className="h-5 w-5" />
+                            <span className="ml-1 text-sm">{post.comments_count}</span>
                           </Button>
                         </div>
+                      </div>
 
-                        {/* Comments */}
-                        {openComments[post.id] && (
-                          <div className="mt-4 space-y-3">
-                            {(comments[post.id] || []).map((c) => (
-                              <div key={c.id} className="flex gap-2">
+                      {/* Comments Section */}
+                      {openComments[post.id] && (
+                        <div className="border-t bg-muted/30">
+                          <div className="p-4 space-y-3">
+                            {(comments[post.id] || []).map((comment) => (
+                              <div key={comment.id} className="flex gap-2">
                                 <Avatar className="h-8 w-8">
-                                  <AvatarImage src={c.user_profile?.avatar_url || undefined} />
-                                  <AvatarFallback>
-                                    {(c.user_profile?.full_name?.charAt(0) || c.user_profile?.username?.charAt(0) || "U").toUpperCase()}
+                                  <AvatarImage src={comment.user_profile?.avatar_url || undefined} />
+                                  <AvatarFallback className="text-xs">
+                                    {(comment.user_profile?.full_name?.charAt(0) || comment.user_profile?.username?.charAt(0) || "U").toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
-                                  <div className="text-sm">
-                                    <span className="font-medium">{c.user_profile?.full_name || c.user_profile?.username || "User"}</span>{" "}
-                                    {c.content}
+                                  <div className="bg-muted rounded-lg px-3 py-2">
+                                    <p className="font-medium text-xs">
+                                      {comment.user_profile?.username || "User"}
+                                    </p>
+                                    <p className="text-sm">{comment.content}</p>
                                   </div>
-                                  <div className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString()}</div>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {new Date(comment.created_at).toLocaleString()}
+                                  </p>
                                 </div>
                               </div>
                             ))}
 
-                            {/* Add comment */}
+                            {/* Add Comment */}
                             {user && (
                               <div className="flex gap-2 pt-2">
-                                <Input
-                                  placeholder="Add a comment..."
-                                  value={newComment[post.id] || ""}
-                                  onChange={(e) => setNewComment((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") addComment(post.id);
-                                  }}
-                                />
-                                <Button size="sm" onClick={() => addComment(post.id)} disabled={!newComment[post.id]?.trim()}>
-                                  <Send className="h-4 w-4" />
-                                </Button>
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback className="text-xs">
+                                    {user.email?.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 flex gap-2">
+                                  <Input
+                                    placeholder="Add a comment..."
+                                    value={newComment[post.id] || ""}
+                                    onChange={(e) => setNewComment((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") addComment(post.id);
+                                    }}
+                                    className="flex-1"
+                                  />
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => addComment(post.id)} 
+                                    disabled={!newComment[post.id]?.trim()}
+                                  >
+                                    <Send className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
           </main>
         </div>
       </div>
