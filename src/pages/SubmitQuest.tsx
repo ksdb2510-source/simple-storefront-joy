@@ -42,13 +42,37 @@ const SubmitQuest = () => {
       if (!id) return;
 
       try {
-        const { data: questData, error } = await supabase
+        // First try to fetch from regular Quests table
+        let questData = null;
+        let error = null;
+        
+        const { data: regularQuestData, error: regularQuestError } = await supabase
           .from("Quests")
           .select("id, title, description")
           .eq("id", id)
-          .single();
+          .maybeSingle();
 
-        if (error) throw error;
+        if (regularQuestData) {
+          questData = regularQuestData;
+        } else {
+          // If not found in regular quests, try AI-generated quests
+          const { data: aiQuestData, error: aiQuestError } = await supabase
+            .from("ai_generated_quests")
+            .select("id, title, description")
+            .eq("id", id)
+            .maybeSingle();
+
+          if (aiQuestData) {
+            questData = aiQuestData;
+          } else {
+            error = aiQuestError || regularQuestError;
+          }
+        }
+
+        if (!questData) {
+          throw error || new Error("Quest not found");
+        }
+        
         setQuest(questData);
 
         // Check if user has already submitted
