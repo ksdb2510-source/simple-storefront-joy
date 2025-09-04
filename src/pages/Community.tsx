@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Send, Hash, Filter, Plus, ChevronDown, ChevronUp, Tag } from "lucide-react";
+import { Heart, MessageCircle, Send, Hash, Filter, Plus, ChevronDown, ChevronUp, Tag, Image } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface CommunityPost {
   id: string;
@@ -56,6 +57,7 @@ const Community = () => {
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState<CommunityPost["post_type"]>("general");
   const [tagsInput, setTagsInput] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   // Filters
   const [tagFilter, setTagFilter] = useState<string>("");
@@ -104,8 +106,8 @@ const Community = () => {
 
       const userIds: string[] = (data || []).map((p: any) => p.user_id);
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, username, full_name, avatar_url")
+        .from("Users")
+        .select("id, username, bio, avatar_url")
         .in("id", userIds);
 
       const postsWithCounts: CommunityPost[] = await Promise.all(
@@ -123,7 +125,11 @@ const Community = () => {
             likes_count: likes.length,
             comments_count: cmts.length,
             user_has_liked: user ? likes.some((l: any) => l.user_id === user.id) : false,
-            user_profile: profile,
+            user_profile: profile ? {
+              username: profile.username,
+              full_name: profile.bio, // Using bio as full_name since Users table has bio instead of full_name
+              avatar_url: profile.avatar_url
+            } : null,
           } as CommunityPost;
         })
       );
@@ -167,6 +173,7 @@ const Community = () => {
           content: content.trim(),
           post_type: postType,
           tags,
+          image_url: imageUrl || null,
         })
         .select()
         .single();
@@ -178,6 +185,7 @@ const Community = () => {
       setContent("");
       setTagsInput("");
       setPostType("general");
+      setImageUrl("");
 
       toast({ title: "Posted", description: "Your community post is live!" });
       await fetchPosts();
@@ -237,14 +245,21 @@ const Community = () => {
 
       const userIds = (data || []).map((c: any) => c.user_id);
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, username, full_name, avatar_url")
+        .from("Users")
+        .select("id, username, bio, avatar_url")
         .in("id", userIds);
 
-      const withProfiles: CommunityComment[] = (data || []).map((c: any) => ({
-        ...c,
-        user_profile: profiles?.find((p) => p.id === c.user_id) || null,
-      }));
+      const withProfiles: CommunityComment[] = (data || []).map((c: any) => {
+        const profile = profiles?.find((p) => p.id === c.user_id);
+        return {
+          ...c,
+          user_profile: profile ? {
+            username: profile.username,
+            full_name: profile.bio,
+            avatar_url: profile.avatar_url
+          } : null,
+        };
+      });
 
       setComments((prev) => ({ ...prev, [postId]: withProfiles }));
     } catch (err) {
@@ -332,6 +347,20 @@ const Community = () => {
                     </div>
                   </div>
                   <Textarea placeholder="Write your post..." value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[120px]" />
+                  
+                  {/* Image Upload */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <Image className="h-4 w-4" />
+                      Add Image (Optional)
+                    </label>
+                    <ImageUpload
+                      onImageUpload={setImageUrl}
+                      onImageRemove={() => setImageUrl("")}
+                      existingImage={imageUrl}
+                    />
+                  </div>
+                  
                   <div className="flex justify-end">
                     <Button onClick={handleCreatePost} disabled={!title.trim() || !content.trim() || creating}>
                       {creating ? "Posting..." : "Post"}

@@ -20,6 +20,8 @@ import { SocialMediaFeed } from "@/components/social/SocialMediaFeed";
 import { usePerformance } from "@/hooks/use-performance";
 import ThemeToggleButton from "@/components/ui/theme-toggle-button";
 import { AIQuestGenerator } from "@/components/quest/AIQuestGenerator";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { useUserBadges } from "@/hooks/useUserBadges";
 
 interface Quest {
   id: string;
@@ -39,6 +41,8 @@ const Home = () => {
   const { isAdmin, isModerator } = useRole();
   const { trackPageView } = useAnalytics();
   const { throttle, debounce } = usePerformance();
+  const { userRank, loading: leaderboardLoading } = useLeaderboard();
+  const { recentBadge, totalBadges, loading: badgesLoading } = useUserBadges();
   const [allQuests, setAllQuests] = useState<Quest[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [featuredQuest, setFeaturedQuest] = useState<Quest | null>(null);
@@ -50,19 +54,34 @@ const Home = () => {
     
     const fetchQuests = async () => {
       try {
-        const { data, error } = await supabase
-          .from("Quests")
-          .select("*")
-          .eq("is_active", true)
-          .order("created_at", { ascending: false });
+        // Fetch both regular and AI generated quests
+        const [regularQuestsRes, aiQuestsRes] = await Promise.all([
+          supabase
+            .from("Quests")
+            .select("*")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("ai_generated_quests")
+            .select("*")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+        ]);
 
-        if (error) throw error;
+        if (regularQuestsRes.error) throw regularQuestsRes.error;
+        if (aiQuestsRes.error) throw aiQuestsRes.error;
 
-        setAllQuests(data || []);
-        setQuests(data || []);
+        // Combine both quest types
+        const combinedQuests = [
+          ...(regularQuestsRes.data || []),
+          ...(aiQuestsRes.data || [])
+        ];
+
+        setAllQuests(combinedQuests);
+        setQuests(combinedQuests);
         // Set first quest as featured
-        if (data && data.length > 0) {
-          setFeaturedQuest(data[0]);
+        if (combinedQuests.length > 0) {
+          setFeaturedQuest(combinedQuests[0]);
         }
       } catch (error) {
         console.error("Error fetching quests:", error);
@@ -182,8 +201,8 @@ const Home = () => {
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">{quests.length}</div>
-                        <p className="text-xs text-muted-foreground">Ready to explore</p>
+                        <div className="text-2xl font-bold">{loading ? "..." : quests.length}</div>
+                        <p className="text-xs text-muted-foreground">Including AI generated</p>
                       </CardContent>
                     </Card>
                     
@@ -193,8 +212,12 @@ const Home = () => {
                         <Star className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">Explore</div>
-                        <p className="text-xs text-muted-foreground">View achievements</p>
+                        <div className="text-2xl font-bold">
+                          {badgesLoading ? "..." : totalBadges}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {recentBadge ? `Latest: ${recentBadge.badge.name}` : "No badges yet"}
+                        </p>
                       </CardContent>
                     </Card>
                     
@@ -215,8 +238,10 @@ const Home = () => {
                         <Users className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">Compete</div>
-                        <p className="text-xs text-muted-foreground">View rankings</p>
+                        <div className="text-2xl font-bold">
+                          {leaderboardLoading ? "..." : userRank ? `#${userRank}` : "Unranked"}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Your current position</p>
                       </CardContent>
                     </Card>
                   </div>
