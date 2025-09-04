@@ -38,73 +38,61 @@ const Leaderboard = () => {
     try {
       setLoading(true);
       
-      // Build leaderboard data manually since we don't have the view yet
-      // Get all user profiles with their submission and badge counts
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          username,
-          full_name,
-          avatar_url
-        `);
+      // Get users with their badge and submission counts
+      const { data: users, error: usersError } = await supabase
+        .from("Users")
+        .select("id, username, avatar_url");
 
-      if (profilesError) throw profilesError;
+      if (usersError) throw usersError;
+
+      // Get badge counts for each user
+      const { data: badgeCounts, error: badgeError } = await supabase
+        .from("User Badges")
+        .select("user_id");
+
+      if (badgeError) throw badgeError;
 
       // Get submission counts for each user
-      const leaderboardData: LeaderboardEntry[] = [];
-      
-      for (const profile of profiles || []) {
-        // Get total submissions
-        const { count: totalSubmissions } = await supabase
-          .from('Submissions')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', profile.id);
+      const { data: submissionCounts, error: submissionError } = await supabase
+        .from("Submissions")
+        .select("user_id");
 
-        // Get verified submissions
-        const { count: verifiedSubmissions } = await supabase
-          .from('Submissions')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', profile.id)
-          .eq('status', 'verified');
+      if (submissionError) throw submissionError;
 
-        // Get badge count
-        const { count: totalBadges } = await supabase
-          .from('User Badges')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', profile.id);
-
-        // Calculate score: verified_submissions * 10 + total_badges * 5 + total_submissions
-        const score = (verifiedSubmissions || 0) * 10 + (totalBadges || 0) * 5 + (totalSubmissions || 0);
-
-        leaderboardData.push({
-          user_id: profile.id,
-          username: profile.username || '',
-          full_name: profile.full_name || '',
-          avatar_url: profile.avatar_url || '',
-          total_submissions: totalSubmissions || 0,
-          verified_submissions: verifiedSubmissions || 0,
-          total_badges: totalBadges || 0,
+      // Calculate scores and build leaderboard
+      const leaderboardData: LeaderboardEntry[] = (users || []).map((user) => {
+        const badges = badgeCounts?.filter(b => b.user_id === user.id).length || 0;
+        const submissions = submissionCounts?.filter(s => s.user_id === user.id).length || 0;
+        
+        // Score calculation: badges worth 10 points, submissions worth 2 points
+        const score = badges * 10 + submissions * 2;
+        
+        return {
+          user_id: user.id,
+          username: user.username || '',
+          full_name: user.username || '', // Use username for full_name since Users table doesn't have full_name
+          avatar_url: user.avatar_url || '',
+          total_submissions: submissions,
+          verified_submissions: submissions, // All submissions are considered verified for now
+          total_badges: badges,
           score,
-          rank: 0, // Will be set below
-        });
-      }
+          rank: 0 // Will be set below
+        };
+      });
 
-      // Sort by score and add ranks
-      const sortedData = leaderboardData
-        .sort((a, b) => b.score - a.score)
-        .map((entry, index) => ({
-          ...entry,
-          rank: index + 1,
-        }))
-        .slice(0, 50);
+      // Sort by score and assign ranks to ALL users
+      const sortedData = leaderboardData.sort((a, b) => b.score - a.score);
+      sortedData.forEach((user, index) => {
+        user.rank = index + 1;
+      });
 
-      setLeaderboard(sortedData);
+      // Set leaderboard to top 50 for display
+      setLeaderboard(sortedData.slice(0, 50));
 
-      // Find current user's rank
+      // Find current user's rank from ALL users, not just top 50
       if (user) {
-        const currentUserEntry = sortedData.find(entry => entry.user_id === user.id);
-        setUserRank(currentUserEntry || null);
+        const currentUserData = sortedData.find(u => u.user_id === user.id);
+        setUserRank(currentUserData || null);
       }
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
