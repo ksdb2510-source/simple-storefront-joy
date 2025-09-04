@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Clock, Star, Users, Camera } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Star, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Quest {
@@ -162,53 +162,34 @@ const QuestDetail = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex gap-4">
               {user ? (
                 <>
                   {hasSubmitted ? (
-                    <Button disabled variant="secondary" size="lg" className="flex-1">
+                    <Button disabled variant="secondary">
                       <Users className="h-4 w-4 mr-2" />
                       Already Submitted
                     </Button>
                   ) : (
                     <Button
                       onClick={() => navigate(`/submit/${quest.id}`)}
-                      size="lg"
-                      className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg"
                     >
-                      <Camera className="h-4 w-4 mr-2" />
                       Submit Your Quest
                     </Button>
                   )}
                   <Button
                     variant="outline"
-                    onClick={() => navigate("/all-quests")}
-                    size="lg"
+                    onClick={() => navigate("/home")}
                   >
-                    <MapPin className="h-4 w-4 mr-2" />
                     View All Quests
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => navigate("/auth")} size="lg" className="flex-1">
+                <Button onClick={() => navigate("/auth")}>
                   Sign In to Participate
                 </Button>
               )}
             </div>
-
-            {/* Submission Instructions */}
-            {user && !hasSubmitted && (
-              <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-primary/20">
-                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  How to Submit Your Quest
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  Click "Submit Your Quest" to upload photos, videos, or documents as proof of completion. 
-                  Add a description of your experience and optional location data to share your discovery with the community.
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
 

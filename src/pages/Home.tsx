@@ -298,10 +298,7 @@ const Home = () => {
                     <div className="space-y-4">
                       <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/all-quests')}>
                         <CardHeader>
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <MapPin className="h-5 w-5" />
-                            View All Quests
-                          </CardTitle>
+                          <CardTitle className="text-lg">View All Quests</CardTitle>
                           <CardDescription>
                             Browse {quests.length} available adventures
                           </CardDescription>
@@ -309,23 +306,9 @@ const Home = () => {
                       </Card>
                       <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleRandomQuest}>
                         <CardHeader>
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <Shuffle className="h-5 w-5" />
-                            Random Quest
-                          </CardTitle>
+                          <CardTitle className="text-lg">Random Quest</CardTitle>
                           <CardDescription>
                             Get a surprise adventure
-                          </CardDescription>
-                        </CardHeader>
-                      </Card>
-                      <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
-                        <CardHeader>
-                          <CardTitle className="text-lg flex items-center gap-2 text-primary">
-                            <Compass className="h-5 w-5" />
-                            Submit Quest Completion
-                          </CardTitle>
-                          <CardDescription>
-                            Upload photos and share your discoveries! Complete any active quest by clicking "Submit Your Quest" on the quest details page.
                           </CardDescription>
                         </CardHeader>
                       </Card>

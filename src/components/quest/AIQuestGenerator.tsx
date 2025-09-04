@@ -245,6 +245,13 @@ export const AIQuestGenerator = () => {
                           {formatDate(quest.created_at)}
                         </div>
                       </div>
+                      <Button
+                        size="sm"
+                        onClick={() => navigate(`/submit/${quest.id}`)}
+                        className="ml-4"
+                      >
+                        Submit Quest
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
