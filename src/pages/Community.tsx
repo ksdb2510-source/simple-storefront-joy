@@ -21,6 +21,7 @@ interface CommunityPost {
   content: string;
   post_type: "general" | "help" | "achievement" | "discussion";
   tags: string[];
+  image_url?: string | null;
   created_at: string;
   likes_count: number;
   comments_count: number;
@@ -102,7 +103,7 @@ const Community = () => {
       // Using any casting to avoid strict typing against generated types
       const { data, error } = await (supabase as any)
         .from("community_posts")
-        .select("id, user_id, title, content, post_type, tags, created_at")
+        .select("id, user_id, title, content, post_type, tags, image_url, created_at")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -486,7 +487,18 @@ const Community = () => {
                         </div>
                       )}
 
-                      {/* Post Content */}
+                       {/* Post Image */}
+                       {post.image_url && (
+                         <div className="w-full">
+                           <img 
+                             src={post.image_url} 
+                             alt="Post image" 
+                             className="w-full h-auto max-h-96 object-cover"
+                           />
+                         </div>
+                       )}
+
+                       {/* Post Content */}
                       <div className="px-4 pb-3">
                         <p className="text-sm whitespace-pre-wrap">{post.content}</p>
                       </div>

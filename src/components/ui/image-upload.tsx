@@ -54,7 +54,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       const previewUrl = URL.createObjectURL(file);
       setPreview(previewUrl);
 
-      // Upload to Supabase storage
+      // Check if storage bucket exists by trying to upload
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `community-posts/${fileName}`;
@@ -63,7 +63,19 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         .from('community-images')
         .upload(filePath, file);
 
-      if (error) throw error;
+      if (error) {
+        // If bucket doesn't exist, show specific error
+        if (error.message.includes('Bucket not found')) {
+          toast({
+            title: "Storage not configured",
+            description: "Please contact admin to set up image storage",
+            variant: "destructive"
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -76,11 +88,19 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         description: "Your image has been uploaded successfully"
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
+      
+      let errorMessage = "Failed to upload image. Please try again.";
+      if (error.message?.includes('column "image_url" does not exist')) {
+        errorMessage = "Image uploads not supported yet. Database needs updating.";
+      } else if (error.message?.includes('Bucket not found')) {
+        errorMessage = "Image storage not configured. Please contact admin.";
+      }
+      
       toast({
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
       setPreview(null);
