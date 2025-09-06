@@ -12,6 +12,7 @@ import { AppSidebar } from "@/components/navigation/AppSidebar";
 import { ProfileDropdown } from "@/components/navigation/ProfileDropdown";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import ThemeToggleButton from "@/components/ui/theme-toggle-button";
+import { StreakDisplay } from "@/components/streak/StreakDisplay";
 
 interface Quest {
   id: string;
@@ -104,6 +105,7 @@ const AllQuests = () => {
               <div className="flex items-center gap-4">
                 <ThemeToggleButton/>
                 <NotificationCenter />
+                <StreakDisplay />
                 <ProfileDropdown />
               </div>
             </div>

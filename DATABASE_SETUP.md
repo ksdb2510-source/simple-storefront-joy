@@ -32,6 +32,37 @@ FOR DELETE TO authenticated
 USING (bucket_id = 'community-images' AND auth.uid()::text = (storage.foldername(name))[1]);
 ```
 
+## 3. (Optional) Enhanced Streak Tracking
+
+If you want enhanced streak tracking with a dedicated table, run this SQL:
+
+```sql
+-- Create user_streaks table for enhanced streak tracking
+CREATE TABLE IF NOT EXISTS user_streaks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  current_streak INTEGER DEFAULT 0,
+  longest_streak INTEGER DEFAULT 0,
+  last_activity_date DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+-- Enable RLS
+ALTER TABLE user_streaks ENABLE ROW LEVEL SECURITY;
+
+-- Policy to allow users to view their own streak data
+CREATE POLICY "Users can view own streak data" ON user_streaks
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Policy to allow users to update their own streak data
+CREATE POLICY "Users can update own streak data" ON user_streaks
+  FOR ALL
+  USING (auth.uid() = user_id);
+```
+
 ## Steps to apply:
 1. Go to your Supabase Dashboard
 2. Click on "SQL Editor" in the left sidebar

@@ -22,6 +22,7 @@ import ThemeToggleButton from "@/components/ui/theme-toggle-button";
 import { AIQuestGenerator } from "@/components/quest/AIQuestGenerator";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useUserBadges } from "@/hooks/useUserBadges";
+import { StreakDisplay } from "@/components/streak/StreakDisplay";
 
 interface Quest {
   id: string;
@@ -166,6 +167,7 @@ const Home = () => {
                 </div>
                 <ThemeToggleButton />
                 <NotificationCenter />
+                <StreakDisplay />
                 <ProfileDropdown />
               </div>
             </div>

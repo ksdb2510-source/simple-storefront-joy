@@ -7,6 +7,7 @@ import { QuestMap } from "@/components/quest/QuestMap";
 import { AppSidebar } from "@/components/navigation/AppSidebar";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { ProfileDropdown } from "@/components/navigation/ProfileDropdown";
+import { StreakDisplay } from "@/components/streak/StreakDisplay";
 
 interface Quest {
   id: string;
@@ -71,6 +72,7 @@ const QuestMapPage = () => {
                   <p className="text-sm text-muted-foreground">Explore quests near you</p>
                 </div>
                 <NotificationCenter />
+                <StreakDisplay />
                 <ProfileDropdown />
               </div>
             </div>
