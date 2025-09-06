@@ -28,8 +28,8 @@ export const useLeaderboard = () => {
 
       // Get users with their badge and submission counts
       const { data: users, error: usersError } = await supabase
-        .from("Users")
-        .select("id, username, avatar_url");
+        .from("profiles")
+        .select("id, full_name, avatar_url");
 
       if (usersError) throw usersError;
 
@@ -57,7 +57,7 @@ export const useLeaderboard = () => {
         
         return {
           id: user.id,
-          username: user.username,
+          username: user.full_name || 'Anonymous',
           avatar_url: user.avatar_url,
           total_badges: badges,
           total_submissions: submissions,

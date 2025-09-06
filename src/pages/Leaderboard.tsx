@@ -40,8 +40,8 @@ const Leaderboard = () => {
       
       // Get users with their badge and submission counts
       const { data: users, error: usersError } = await supabase
-        .from("Users")
-        .select("id, username, avatar_url");
+        .from("profiles")
+        .select("id, full_name, avatar_url");
 
       if (usersError) throw usersError;
 
@@ -69,8 +69,8 @@ const Leaderboard = () => {
         
         return {
           user_id: user.id,
-          username: user.username || '',
-          full_name: user.username || '', // Use username for full_name since Users table doesn't have full_name
+          username: user.full_name || 'Anonymous',
+          full_name: user.full_name || 'Anonymous',
           avatar_url: user.avatar_url || '',
           total_submissions: submissions,
           verified_submissions: submissions, // All submissions are considered verified for now
