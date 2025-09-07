@@ -13,6 +13,8 @@ import { ProfileDropdown } from "@/components/navigation/ProfileDropdown";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import ThemeToggleButton from "@/components/ui/theme-toggle-button";
 import { StreakDisplay } from "@/components/streak/StreakDisplay";
+import { AIQuestGenerator } from "@/components/quest/AIQuestGenerator";
+import { QuestRecommendations } from "@/components/performance/QuestRecommendations";
 
 interface Quest {
   id: string;
@@ -31,23 +33,36 @@ const AllQuests = () => {
   const { trackPageView } = useAnalytics();
   const [allQuests, setAllQuests] = useState<Quest[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
+  const [aiQuests, setAiQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'regular' | 'ai' | 'recommended'>('regular');
 
   useEffect(() => {
     trackPageView('/all-quests');
     
     const fetchQuests = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch regular quests
+        const { data: regularQuests, error: regularError } = await supabase
           .from("Quests")
           .select("*")
           .eq("is_active", true)
           .order("created_at", { ascending: false });
 
-        if (error) throw error;
+        if (regularError) throw regularError;
 
-        setAllQuests(data || []);
-        setQuests(data || []);
+        // Fetch AI-generated quests
+        const { data: aiGeneratedQuests, error: aiError } = await supabase
+          .from("ai_generated_quests")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false });
+
+        if (aiError) throw aiError;
+
+        setAllQuests(regularQuests || []);
+        setQuests(regularQuests || []);
+        setAiQuests(aiGeneratedQuests || []);
       } catch (error) {
         console.error("Error fetching quests:", error);
         toast({
@@ -116,59 +131,155 @@ const AllQuests = () => {
             <div className="mb-8">
               <h1 className="text-3xl font-bold mb-2">Explore All Adventures</h1>
               <p className="text-muted-foreground">
-                Discover all available quests and find your next adventure.
+                Discover community quests, AI-generated adventures, and personalized recommendations.
               </p>
             </div>
 
-            {/* Search and Filter */}
-            <SearchAndFilter quests={allQuests} onFilteredQuests={handleFilteredQuests} />
-
-            {/* Quests Grid */}
-            <div className="mt-8">
-              {loading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : quests.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {quests.map((quest) => (
-                    <Card key={quest.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/quest/${quest.id}`)}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <CardTitle className="text-lg line-clamp-2">{quest.title}</CardTitle>
-                          <Badge className={getQuestTypeColor(quest.quest_type)}>
-                            {quest.quest_type}
-                          </Badge>
-                        </div>
-                        <CardDescription className="line-clamp-3">
-                          {quest.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-1">
-                            {getDifficultyStars(quest.difficulty)}
-                          </div>
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <MapPin className="w-4 h-4" />
-                            <span>{quest.location}</span>
-                          </div>
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <Clock className="w-4 h-4" />
-                            <span>Posted {new Date(quest.created_at).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground text-lg">No quests available</p>
-                  <p className="text-sm text-muted-foreground/60 mt-1">Check back later for new adventures!</p>
-                </div>
-              )}
+            {/* Tab Navigation */}
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setActiveTab('regular')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activeTab === 'regular' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                Community Quests ({allQuests.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('ai')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activeTab === 'ai' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                AI Generated ({aiQuests.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('recommended')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activeTab === 'recommended' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                Recommended
+              </button>
             </div>
+
+            {/* Content based on active tab */}
+            {activeTab === 'regular' && (
+              <div>
+                {/* Search and Filter for regular quests */}
+                <SearchAndFilter quests={allQuests} onFilteredQuests={handleFilteredQuests} />
+                
+                <div className="mt-8">
+                  {loading ? (
+                    <div className="flex justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : quests.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {quests.map((quest) => (
+                        <Card key={quest.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/quest/${quest.id}`)}>
+                          <CardHeader>
+                            <div className="flex items-start justify-between">
+                              <CardTitle className="text-lg line-clamp-2">{quest.title}</CardTitle>
+                              <Badge className={getQuestTypeColor(quest.quest_type)}>
+                                {quest.quest_type}
+                              </Badge>
+                            </div>
+                            <CardDescription className="line-clamp-3">
+                              {quest.description}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              <div className="flex items-center space-x-1">
+                                {getDifficultyStars(quest.difficulty)}
+                              </div>
+                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                <MapPin className="w-4 h-4" />
+                                <span>{quest.location}</span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                <Clock className="w-4 h-4" />
+                                <span>Posted {new Date(quest.created_at).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground text-lg">No community quests available</p>
+                      <p className="text-sm text-muted-foreground/60 mt-1">Check back later for new adventures!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'ai' && (
+              <div>
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : aiQuests.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {aiQuests.map((quest) => (
+                      <Card key={quest.id} className="cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-purple-500" onClick={() => navigate(`/submit/${quest.id}`)}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <CardTitle className="text-lg line-clamp-2">{quest.title}</CardTitle>
+                            <div className="flex flex-col gap-1">
+                              <Badge className={getQuestTypeColor(quest.quest_type)}>
+                                {quest.quest_type}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                                AI Generated
+                              </Badge>
+                            </div>
+                          </div>
+                          <CardDescription className="line-clamp-3">
+                            {quest.description}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-1">
+                              {getDifficultyStars(quest.difficulty)}
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <MapPin className="w-4 h-4" />
+                              <span>{quest.location}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <Clock className="w-4 h-4" />
+                              <span>Generated {new Date(quest.created_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <AIQuestGenerator />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'recommended' && (
+              <div>
+                <QuestRecommendations />
+              </div>
+            )}
           </div>
         </div>
       </div>
