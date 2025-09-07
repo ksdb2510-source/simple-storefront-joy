@@ -8,6 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, Trophy, Medal, Crown, Star, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { StreakDisplay } from '@/components/streak/StreakDisplay';
+import ThemeToggleButton from '@/components/ui/theme-toggle-button';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { ProfileDropdown } from '@/components/navigation/ProfileDropdown';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -149,25 +153,31 @@ const Leaderboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate('/home')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Leaderboard
-            </h1>
-            <p className="text-muted-foreground">
-              See how you rank against other adventurers
-            </p>
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b mb-8">
+          <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/home')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">Leaderboard</h1>
+                <p className="text-sm text-muted-foreground">See how you rank</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <ThemeToggleButton />
+              <NotificationCenter />
+              <StreakDisplay />
+              <ProfileDropdown />
+            </div>
           </div>
-        </div>
+        </header>
 
         {/* User's Current Rank */}
         {userRank && (

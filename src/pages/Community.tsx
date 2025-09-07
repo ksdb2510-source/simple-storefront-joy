@@ -13,6 +13,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Heart, MessageCircle, Send, Hash, Filter, Plus, ChevronDown, ChevronUp, Tag, Image } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { StreakDisplay } from "@/components/streak/StreakDisplay";
+import ThemeToggleButton from "@/components/ui/theme-toggle-button";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { ProfileDropdown } from "@/components/navigation/ProfileDropdown";
 
 interface CommunityPost {
   id: string;
@@ -315,8 +319,11 @@ const Community = () => {
                 <SidebarTrigger />
                 <h1 className="text-2xl font-bold">Community Chat</h1>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Showcase achievements, ask for help, and connect with explorers.</p>
+              <div className="flex items-center gap-4">
+                <ThemeToggleButton />
+                <NotificationCenter />
+                <StreakDisplay />
+                <ProfileDropdown />
               </div>
             </div>
           </header>
